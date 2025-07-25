@@ -1,7 +1,4 @@
-import {
-  McpServer,
-  ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import childProcess from "node:child_process";
@@ -17,7 +14,6 @@ class Child {
   constructor(shell: string) {
     const child = childProcess.spawn(shell, {
       shell: true,
-      stdio: "inherit",
     });
 
     child.stdout?.on("data", (data) => {
@@ -57,15 +53,22 @@ class Child {
       throw new Error("Child process stdin is not available.");
     }
   }
+  public kill(): void {
+    if (this.process.killed) {
+      return;
+    }
+    this.process.kill();
+    this.state = "stopped";
+  }
 }
 
 // Create an MCP server
 const server = new McpServer({
-  name: "demo-server",
+  name: "bgtask-server",
   version: "1.0.0",
 });
 
-const processes = new Map<string, childProcess.ChildProcess>();
+const processes = new Map<string, Child>();
 
 // Add an addition tool
 server.registerTool(
@@ -73,7 +76,7 @@ server.registerTool(
   {
     title: "Run Background Task",
     description:
-      "Runs a long-running command in background. It is useful for starting dev servers or other tasks.",
+      "Runs a long-running command (like 'npm run dev') in background. When the command is running, you can interact with it using other tools.",
     inputSchema: {
       name: z.string().describe("Unique name of the task"),
       shell: z.string().describe("Shell command to run in background"),
@@ -84,23 +87,15 @@ server.registerTool(
       throw new Error(`Task with name "${name}" is already running.`);
     }
 
-    const child = childProcess.spawn(shell, {
-      shell: true,
-      stdio: "inherit",
-    });
+    const child = new Child(shell);
 
     processes.set(name, child);
-
-    child.on("exit", (code) => {
-      processes.delete(name);
-      console.log(`Task "${name}" exited with code ${code}`);
-    });
 
     return {
       content: [
         {
           type: "text",
-          text: `Task "${name}" started with PID ${child.pid}.`,
+          text: `Task "${name}" started with PID ${child.getPid()}.`,
         },
       ],
     };
@@ -163,8 +158,8 @@ server.registerTool(
     } else {
       const tasks = Array.from(processes.entries()).map(([name, child]) => ({
         name,
-        pid: child.pid,
-        state: child.killed ? "stopped" : "running",
+        pid: child.getPid(),
+        state: child.getState(),
       }));
       return {
         content: [
@@ -277,7 +272,7 @@ server.registerTool(
     }
 
     try {
-      child.stdin?.write(data + "\n");
+      child.writeToStdin(data);
       return {
         content: [
           {
@@ -301,23 +296,18 @@ server.registerTool(
   }
 );
 
-// Add a dynamic greeting resource
-// server.registerResource(
-//   "greeting",
-//   new ResourceTemplate("greeting://{name}", { list: undefined }),
-//   {
-//     title: "Greeting Resource", // Display name for UI
-//     description: "Dynamic greeting generator",
-//   },
-//   async (uri, { name }) => ({
-//     contents: [
-//       {
-//         uri: uri.href,
-//         text: `Hello, ${name}!`,
-//       },
-//     ],
-//   })
-// );
+// Exit child processes when the server is stopped
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.on(signal, () => {
+    // console.log(`Received ${signal}, stopping all background tasks...`);
+    for (const [name, child] of processes.entries()) {
+      // console.log(`Stopping task "${name}" with PID ${child.pid}...`);
+      child.kill();
+    }
+    // console.log("All background tasks stopped.");
+    process.exit(0);
+  });
+}
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
-    "build": "tsc",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js",
     "type-check": "tsc --noEmit",
     "dev": "pnpx @modelcontextprotocol/inspector node dist/index.js"
   },
@@ -15,6 +15,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
+    "esbuild": "^0.25.8",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
