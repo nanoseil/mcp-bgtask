@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "bgtask": {
-      "command": "pnpm",
-      "args": ["run", "start"]
+      "command": "npx",
+      "args": ["."]
     }
   }
 }
