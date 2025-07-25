@@ -1,0 +1,26 @@
+{
+  "name": "mcp-bgtask",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "dev": "pnpx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "@types/node": "^24.1.0",
+    "zod": "^3.25.26"
+  }
+}
