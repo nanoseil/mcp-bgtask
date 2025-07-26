@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server that enables running and managing long-running background tasks from within Claude Desktop or other MCP-compatible clients.
 
+<a href="https://glama.ai/mcp/servers/@nanoseil/mcp-bgtask">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@nanoseil/mcp-bgtask/badge" alt="Background Task Server MCP server" />
+</a>
+
 ## Features
 
 - **Run Background Tasks**: Execute long-running commands (like `npm run dev`, servers, builds) in the background
